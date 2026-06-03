@@ -12,8 +12,6 @@
 
 </div>
 
----
-
 ## 📖 项目介绍
 
 「侦探事务所」是一个**每日逻辑推理网页游戏**。如果你玩过"**爱因斯坦的谜题**"（也叫斑马谜题 / Zebra Puzzle）——「英国人住红房子，瑞典人养狗，斑马是谁的？」——本游戏就是它的**侦探主题剧情版**。
@@ -38,8 +36,6 @@
 > **生产环境**：[https://detective-bureau.vercel.app](https://detective-bureau.vercel.app)（部署后填入实际地址）
 
 部署在 [Vercel](https://vercel.com) + [Turso](https://turso.tech)（LibSQL）。
-
----
 
 ## 🎮 怎么玩
 
@@ -98,8 +94,6 @@
 
 8 条线索即可推出唯一答案。
 
----
-
 ## 🛠️ 技术栈
 
 | 类别 | 技术 |
@@ -151,8 +145,6 @@
 │   └── types/
 └── package.json
 ```
-
----
 
 ## 🚀 部署
 
@@ -233,8 +225,6 @@ npm run seed
 
 > **不设这两个 Turso 变量时**会自动回落到本地 `local.db` SQLite，便于零配置开发。
 
----
-
 ## 🧪 开发与调试
 
 ### 常用命令
@@ -261,8 +251,6 @@ npm run seed       # 同步题库到 Turso
 - 每题至少 2 种线索类型（多样性 tiebreaker）
 - 涉及主类别（侦探 / 船长 / 宇航员 …）的模板每题至多 1 次，避免"X 名字 + 动作"重复
 
----
-
 ## 🤝 贡献
 
 欢迎 Issue 和 PR。建议先开 Issue 描述需求 / 问题，再提 PR。
@@ -274,8 +262,6 @@ npm run seed       # 同步题库到 Turso
 - 跨设备同步（账号体系 / 云端历史）
 - 分享成绩（Wordle 风格 emoji 网格）
 - 排行榜 / 段位
-
----
 
 ## ⚖️ 开源协议
 
@@ -290,8 +276,6 @@ If you modify and deploy this project as a network service, you must make the co
 See the LICENSE file for details.
 
 [MIT License](LICENSE)
-
----
 
 <div align="center">
 
