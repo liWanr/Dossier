@@ -30,24 +30,26 @@ export function MatrixCell({ state, onClick, disabled, isManual, isAuto, size = 
     if (cb) {
       bg = hc
         ? 'bg-blue-500 text-white ring-2 ring-blue-900 ring-inset'
-        : 'bg-blue-100 text-blue-700' + (isManual ? '' : ' opacity-90');
+        : 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' + (isManual ? '' : ' opacity-90');
     } else {
       bg = hc
         ? 'bg-emerald-500 text-white ring-2 ring-emerald-900 ring-inset'
-        : 'bg-emerald-100 text-emerald-600';
+        : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300';
     }
   } else if (state === 'excluded') {
     if (cb) {
       bg = hc
         ? (isManual ? 'bg-orange-500 text-white ring-2 ring-orange-900 ring-inset' : 'bg-orange-400 text-white ring-2 ring-orange-800 ring-inset')
-        : (isManual ? 'bg-orange-100 text-orange-700' : 'bg-orange-50 text-orange-400');
+        : (isManual ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300' : 'bg-orange-50 dark:bg-orange-950/40 text-orange-400 dark:text-orange-500');
     } else {
       bg = hc
         ? (isManual ? 'bg-red-500 text-white ring-2 ring-red-900 ring-inset' : 'bg-red-400 text-white ring-2 ring-red-800 ring-inset')
-        : (isManual ? 'bg-red-100 text-red-500' : 'bg-red-50 text-red-300');
+        : (isManual ? 'bg-red-100 dark:bg-red-900/50 text-red-500 dark:text-red-300' : 'bg-red-50 dark:bg-red-950/40 text-red-300 dark:text-red-500');
     }
   } else {
-    bg = disabled ? '' : (hc ? 'hover:bg-amber-100 ring-1 ring-stone-300 ring-inset' : 'hover:bg-amber-50');
+    bg = disabled
+      ? ''
+      : (hc ? 'hover:bg-amber-100 dark:hover:bg-amber-900/30 ring-1 ring-stone-300 dark:ring-stone-600 ring-inset' : 'hover:bg-amber-50 dark:hover:bg-amber-900/20');
   }
 
   // Icon stroke width scales up in HC mode for clearer shapes
