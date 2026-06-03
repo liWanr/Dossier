@@ -16,9 +16,11 @@
 
 ## 📖 项目介绍
 
-「侦探事务所」是一个**每日逻辑推理网页游戏**。每天提供 3 道不同难度的「逻辑网格」谜题（简单 / 中等 / 困难），玩家化身侦探，根据线索还原案件全貌：谁负责哪桩案件、用了哪件证物、案发于何时何地、嫌疑人是谁。
+「侦探事务所」是一个**每日逻辑推理网页游戏**。如果你玩过"**爱因斯坦的谜题**"（也叫斑马谜题 / Zebra Puzzle）——「英国人住红房子，瑞典人养狗，斑马是谁的？」——本游戏就是它的**侦探主题剧情版**。
 
-灵感来源于经典的「Logic Grid Puzzle」，由 AC-3 约束传播算法保证每道题都有**唯一解**、**无需试错**，并且配有 **5 套主题包**（经典刑侦 / 古代刑名 / 校园悬案 / 海盗谜局 / 太空惊魂），每天按日期轮换，长期游玩不腻。
+每天提供 3 道不同难度的「逻辑网格」谜题（简单 / 中等 / 困难），玩家化身侦探，根据线索还原案件全貌：谁负责哪桩案件、用了哪件证物、案发于何时何地、嫌疑人是谁。
+
+由 AC-3 约束传播算法保证每道题都有**唯一解**、**无需试错**；配有 **5 套主题包**（经典刑侦 / 古代刑名 / 校园悬案 / 海盗谜局 / 太空惊魂），每天按日期轮换，长期游玩不腻。
 
 ### ✨ 核心特性
 
@@ -275,7 +277,17 @@ npm run seed       # 同步题库到 Turso
 
 ---
 
-## 📄 开源协议
+## ⚖️ 开源协议
+
+Dossier (侦探事务所) — A daily Einstein-style logic puzzle game, themed as detective mysteries with 5 rotating worlds.
+
+Copyright (C) 2026 liWanr
+
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+
+If you modify and deploy this project as a network service, you must make the complete corresponding source code available under AGPL-3.0.
+
+See the LICENSE file for details.
 
 [MIT License](LICENSE)
 
