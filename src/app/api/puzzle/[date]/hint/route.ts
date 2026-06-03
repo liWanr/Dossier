@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPuzzlesByDateInternal } from '@/lib/db/puzzleDb';
-import { getAuthoritativeUtc, todayInTimezone, safeTz } from '@/lib/time/serverTime';
+import { getAuthoritativeUtc, latestPlayableDate } from '@/lib/time/serverTime';
 import { applyAndPropagate, initMatrixState, parseCellKey } from '@/lib/engine/matrixUtils';
 import { validateAllClues } from '@/lib/engine/validator';
 import { computeHint } from '@/lib/engine/hint';
@@ -19,14 +19,14 @@ export async function POST(
   { params }: { params: Promise<{ date: string }> }
 ) {
   const { date } = await params;
-  const tz = safeTz(req.nextUrl.searchParams.get('tz'));
-  const utc = await getAuthoritativeUtc();
-  const today = todayInTimezone(utc, tz);
+  // Server-controlled gating — see /api/puzzle/[date]/route.ts for rationale.
+  const utc    = await getAuthoritativeUtc();
+  const latest = latestPlayableDate(utc);
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
   }
-  if (date > today) {
+  if (date > latest) {
     return NextResponse.json({ error: 'locked' }, { status: 403 });
   }
 
