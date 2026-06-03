@@ -258,7 +258,7 @@ If you modify and deploy this project as a network service, you must make the co
 
 See the LICENSE file for details.
 
-[MIT License](LICENSE)
+[AGPL-3.0 License](LICENSE)
 
 <div align="center">
 
