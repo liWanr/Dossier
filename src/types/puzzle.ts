@@ -72,6 +72,9 @@ export interface Puzzle {
   // with primaryCategoryId hoisted as a top-level field (needed for completion checks).
   solution?: Solution;
   primaryCategoryId?: string;
+  // Theme metadata — same theme for all three difficulties on the same day.
+  themeId?: string;
+  themeLabel?: string;
 }
 
 export interface DailyPuzzles {
