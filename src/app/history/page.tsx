@@ -48,7 +48,7 @@ export default function HistoryPage() {
   const rate = participated > 0 ? Math.round((fullDays / participated) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col">
+    <div className="min-h-screen bg-stone-100 dark:bg-stone-950 flex flex-col">
       <TutorialModal forceOpen={showTutorial} onClose={() => setShowTutorial(false)} />
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
       <AppHeader activePage="history" onShowTutorial={() => setShowTutorial(true)} onShowSettings={() => setShowSettings(true)} />
@@ -61,17 +61,17 @@ export default function HistoryPage() {
             { label: '全部完成', value: fullDays, unit: '天' },
             { label: '全完成率', value: rate, unit: '%' },
           ].map(stat => (
-            <div key={stat.label} className="bg-white rounded-xl px-4 py-4 text-center shadow-sm ring-1 ring-stone-200">
-              <div className="text-2xl font-bold text-amber-600">
-                {stat.value}<span className="text-sm text-stone-400 ml-1">{stat.unit}</span>
+            <div key={stat.label} className="bg-white dark:bg-stone-900 rounded-xl px-4 py-4 text-center shadow-sm ring-1 ring-stone-200 dark:ring-stone-700">
+              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                {stat.value}<span className="text-sm text-stone-400 dark:text-stone-500 ml-1">{stat.unit}</span>
               </div>
-              <div className="text-xs text-stone-500 mt-1">{stat.label}</div>
+              <div className="text-xs text-stone-500 dark:text-stone-400 mt-1">{stat.label}</div>
             </div>
           ))}
         </div>
 
         {/* Contribution graph */}
-        <div className="bg-white rounded-xl px-6 py-5 shadow-sm ring-1 ring-stone-200">
+        <div className="bg-white dark:bg-stone-900 rounded-xl px-6 py-5 shadow-sm ring-1 ring-stone-200 dark:ring-stone-700">
           {loaded && today ? (
             <ContributionGraph history={history} today={today} />
           ) : (
