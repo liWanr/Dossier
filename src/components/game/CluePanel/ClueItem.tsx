@@ -46,7 +46,7 @@ export function ClueItem({ clue, status, index, activeTerm, allTerms = [], onHov
       'flex items-start gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200',
       isSatisfied ? okBg : '',
       isViolated ? badBg : '',
-      !isSatisfied && !isViolated && !isHinted ? (hc ? 'bg-stone-100 border-2 border-stone-400' : 'bg-stone-50 border border-stone-200') : '',
+      !isSatisfied && !isViolated && !isHinted ? (hc ? 'bg-stone-100 dark:bg-stone-800 border-2 border-stone-400 dark:border-stone-600' : 'bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700') : '',
       isHinted ? 'bg-amber-50 border border-amber-400 animate-pulse' : '',
     ].join(' ')}>
       {/* Checkbox indicator */}
@@ -75,7 +75,7 @@ export function ClueItem({ clue, status, index, activeTerm, allTerms = [], onHov
         'leading-snug flex-1',
         isSatisfied ? okText : '',
         isViolated ? badText : '',
-        !isSatisfied && !isViolated ? 'text-stone-700' : '',
+        !isSatisfied && !isViolated ? 'text-stone-700 dark:text-stone-200' : '',
       ].join(' ')}>
         {segments.map((seg, i) =>
           seg.isTerm ? (
@@ -85,7 +85,7 @@ export function ClueItem({ clue, status, index, activeTerm, allTerms = [], onHov
                 'rounded-sm px-0.5 cursor-default',
                 seg.value === activeTerm
                   ? 'bg-amber-200 text-amber-900'
-                  : 'hover:bg-amber-100',
+                  : 'hover:bg-amber-100 dark:hover:bg-amber-900/30',
               ].join(' ')}
               onMouseEnter={() => onHoverTerm?.(seg.value)}
               onMouseLeave={() => onHoverTerm?.(null)}
