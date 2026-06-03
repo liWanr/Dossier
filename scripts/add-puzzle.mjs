@@ -43,7 +43,7 @@ if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
 
 // 支持 Turso（Vercel 部署）和本地开发
 const db = createClient({
-  url: process.env.TURSO_CONNECTION_URL || 'file:' + join(__dirname, '..', 'data', 'puzzles.db'),
+  url: process.env.TURSO_DATABASE_URL || 'file:' + join(__dirname, '..', 'data', 'puzzles.db'),
   authToken: process.env.TURSO_AUTH_TOKEN,
 });
 

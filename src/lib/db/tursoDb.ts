@@ -5,7 +5,7 @@ let _client: Client | null = null;
 export function getTursoClient(): Client {
   if (!_client) {
     // 优先使用 Turso 连接（Vercel 部署时设置）
-    const url = process.env.TURSO_CONNECTION_URL;
+    const url = process.env.TURSO_DATABASE_URL;
     const authToken = process.env.TURSO_AUTH_TOKEN;
 
     if (url) {

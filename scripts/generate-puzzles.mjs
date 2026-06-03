@@ -22,7 +22,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // 支持 Turso（Vercel 部署）和本地开发
 const db = createClient({
-  url: process.env.TURSO_CONNECTION_URL || 'file:' + path.join(__dirname, '../data/puzzles.db'),
+  url: process.env.TURSO_DATABASE_URL || 'file:' + path.join(__dirname, '../data/puzzles.db'),
   authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
