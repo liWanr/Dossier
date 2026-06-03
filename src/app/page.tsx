@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import type { Difficulty, DailyPuzzles } from '@/types/puzzle';
 import { useGameStore } from '@/lib/store/gameStore';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
-import { getAllHistory, saveHistoryRecord, loadGameState, subscribeToSync } from '@/lib/db/storage';
+import { getAllHistory, saveHistoryRecord, loadGameState, subscribeToSync, getStorageStatus, onStorageStatusChange } from '@/lib/db/storage';
 import { getActiveDate, setActiveDate, clearActiveDate } from '@/lib/time/sessionDate';
 import { AppHeader } from '@/components/AppHeader';
 import { MatrixGrid } from '@/components/game/LogicMatrix/MatrixGrid';
@@ -39,7 +39,6 @@ function GamePageInner() {
     loadPuzzle,
     restoreMatrix,
     clickCell,
-    applyHint,
     undo,
     redo,
     resetPuzzle,
@@ -48,10 +47,21 @@ function GamePageInner() {
     undoStack,
     redoStack,
     hintCell,
+    justCompletedAt,
+    setPracticeMode,
   } = useGameStore();
 
   const searchParams = useSearchParams();
   const urlDate = parseDateParam(searchParams.get('date'));
+  // Practice mode: replay a completed puzzle from scratch without affecting
+  // history. Triggered via `?practice=1` URL param from the contribution graph.
+  const practiceMode = searchParams.get('practice') === '1';
+
+  // Sync practiceMode from URL → store
+  useEffect(() => {
+    setPracticeMode(practiceMode);
+    return () => setPracticeMode(false);
+  }, [practiceMode, setPracticeMode]);
   const [tz] = useState(getBrowserTz);
   const [today, setToday] = useState<string | null>(null);
   const [targetDate, setTargetDate] = useState<string | null>(null);
@@ -114,10 +124,14 @@ function GamePageInner() {
     if (!p) { console.error('No puzzle for difficulty', difficulty); return; }
     const d = dailyPuzzles.date;
     loadPuzzle(p, d);
-    loadGameState(d, difficulty).then(saved => {
-      if (saved) restoreMatrix(d, difficulty, saved.cells, saved.manualCells);
-    }).catch(console.error);
-  }, [dailyPuzzles, difficulty]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Practice mode: skip restoring the saved (completed) state so the player
+    // gets a fresh empty matrix to solve again.
+    if (!practiceMode) {
+      loadGameState(d, difficulty).then(saved => {
+        if (saved) restoreMatrix(d, difficulty, saved.cells, saved.manualCells);
+      }).catch(console.error);
+    }
+  }, [dailyPuzzles, difficulty, practiceMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cross-tab sync: when another tab writes the same (date, difficulty), reload
   // from IDB so this tab doesn't silently overwrite the other tab's progress.
@@ -183,6 +197,20 @@ function GamePageInner() {
   // Briefly pulse the "saved" indicator after each matrix change to reassure
   // the user that auto-save is alive. No action required from them.
   const [savePulse, setSavePulse] = useState(false);
+
+  // Reset hint toast — fires on single click of 重置, prompts user to double-click instead.
+  const [showResetHint, setShowResetHint] = useState(false);
+  useEffect(() => {
+    if (!showResetHint) return;
+    const t = setTimeout(() => setShowResetHint(false), 2500);
+    return () => clearTimeout(t);
+  }, [showResetHint]);
+
+  // Storage health (IndexedDB) — surface a banner when local storage is broken
+  // (Safari private mode, disabled IDB, quota exceeded …) so the player isn't
+  // silently playing into the void.
+  const [storageStatus, setStorageStatus] = useState(() => getStorageStatus());
+  useEffect(() => onStorageStatusChange(setStorageStatus), []);
   useEffect(() => {
     if (!puzzle) return;
     setSavePulse(true);
@@ -208,7 +236,19 @@ function GamePageInner() {
 
   const hasNextDifficulty = difficulty !== 'hard';
   const isMobile = useIsMobile();
-  const [mobileView, setMobileView] = useState<'matrix' | 'clues'>('matrix');
+  // Persisted in sessionStorage so refreshing a clue-reading tab returns to clues.
+  const MOBILE_VIEW_KEY = 'mobileView';
+  const [mobileView, setMobileViewState] = useState<'matrix' | 'clues'>('matrix');
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(MOBILE_VIEW_KEY);
+      if (saved === 'matrix' || saved === 'clues') setMobileViewState(saved);
+    } catch { /* ignore */ }
+  }, []);
+  const setMobileView = useCallback((v: 'matrix' | 'clues') => {
+    setMobileViewState(v);
+    try { sessionStorage.setItem(MOBILE_VIEW_KEY, v); } catch { /* ignore */ }
+  }, []);
 
   // Clue counts for the segmented control badge
   const satisfiedClues = puzzle ? puzzle.clues.filter(c => clueStatuses[c.id] === 'satisfied').length : 0;
@@ -222,18 +262,18 @@ function GamePageInner() {
 
   if (locked) {
     return (
-      <div className="flex flex-col h-screen bg-stone-100 overflow-hidden">
+      <div className="flex flex-col h-screen bg-stone-100 dark:bg-stone-950 overflow-hidden">
         <TutorialModal forceOpen={showTutorial} onClose={() => setShowTutorial(false)} />
         <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
         <AppHeader activePage="game" onShowTutorial={() => setShowTutorial(true)} onShowSettings={() => setShowSettings(true)} isHistorical={false} />
         <div className="flex-1 flex items-center justify-center px-6">
-          <div className="bg-white rounded-xl shadow-sm ring-1 ring-stone-200 p-10 text-center max-w-md w-full">
+          <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm ring-1 ring-stone-200 dark:ring-stone-700 p-10 text-center max-w-md w-full">
             <div className="text-5xl mb-4">🔒</div>
-            <h2 className="text-lg font-bold text-stone-700 mb-2">案件尚未解锁</h2>
-            <p className="text-sm text-stone-500 mb-1">
-              {targetDate && <>所选日期 <span className="font-semibold text-stone-700">{targetDate}</span> 还未到来。</>}
+            <h2 className="text-lg font-bold text-stone-700 dark:text-stone-200 mb-2">案件尚未解锁</h2>
+            <p className="text-sm text-stone-500 dark:text-stone-400 mb-1">
+              {targetDate && <>所选日期 <span className="font-semibold text-stone-700 dark:text-stone-200">{targetDate}</span> 还未到来。</>}
             </p>
-            <p className="text-xs text-stone-400 mb-6">
+            <p className="text-xs text-stone-400 dark:text-stone-500 mb-6">
               {today ? <>当前日期（{tz}）：{today}</> : '正在校时…'}
             </p>
             <Link
@@ -250,19 +290,44 @@ function GamePageInner() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-stone-100 overflow-hidden">
+    <div className="flex flex-col h-screen bg-stone-100 dark:bg-stone-950 overflow-hidden">
       <TutorialModal forceOpen={showTutorial} onClose={() => setShowTutorial(false)} />
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
       <AppHeader activePage="game" onShowTutorial={() => setShowTutorial(true)} onShowSettings={() => setShowSettings(true)} isHistorical={isHistorical} />
 
+      {practiceMode && (
+        <div role="status" className="px-3 py-1.5 text-xs md:text-sm bg-indigo-100 dark:bg-indigo-900/40 border-b border-indigo-300 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2">
+            <span aria-hidden>🎯</span>
+            <span><span className="font-semibold">练习模式：</span>本次进度不会保存到本机，也不会影响今日战绩</span>
+          </span>
+          <Link href={targetDate ? `/?date=${targetDate.replace(/-/g, '')}` : '/'} className="text-xs underline underline-offset-2 shrink-0">
+            退出练习
+          </Link>
+        </div>
+      )}
+
+      {!storageStatus.ok && (
+        <div role="alert" className="px-3 py-2 text-xs md:text-sm bg-amber-100 border-b border-amber-300 text-amber-900 flex items-start gap-2">
+          <svg viewBox="0 0 16 16" className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M8 3v6M8 12v.5" strokeLinecap="round" />
+            <circle cx="8" cy="8" r="7" />
+          </svg>
+          <span>
+            <span className="font-semibold">本地存储不可用：</span>
+            {storageStatus.reason}。本局进度无法保存，刷新页面将会丢失。请关闭隐私 / 无痕模式或更换浏览器。
+          </span>
+        </div>
+      )}
+
       {/* Mobile-only segmented view switcher — matrix and clues each get full screen */}
       {isMobile && puzzle && (
-        <div className="flex gap-1 px-2 py-1.5 bg-stone-200/70 border-b border-stone-200">
+        <div className="flex gap-1 px-2 py-1.5 bg-stone-200/70 dark:bg-stone-800/70 border-b border-stone-200 dark:border-stone-700">
           <button
             onClick={() => setMobileView('matrix')}
             className={[
               'flex-1 px-3 py-1.5 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-1.5',
-              mobileView === 'matrix' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500',
+              mobileView === 'matrix' ? 'bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 shadow-sm' : 'text-stone-500 dark:text-stone-400',
             ].join(' ')}
           >
             <span aria-hidden>🎯</span>
@@ -272,7 +337,7 @@ function GamePageInner() {
             onClick={() => setMobileView('clues')}
             className={[
               'flex-1 px-3 py-1.5 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-1.5',
-              mobileView === 'clues' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500',
+              mobileView === 'clues' ? 'bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 shadow-sm' : 'text-stone-500 dark:text-stone-400',
             ].join(' ')}
           >
             <span aria-hidden>📝</span>
@@ -294,13 +359,13 @@ function GamePageInner() {
             min-h-0 on flex children stops them from being pushed past their share
             by their own content, so overflow-auto inside actually scrolls. */}
         <div className={[
-          'flex-1 min-h-0 md:flex-[7] flex flex-col overflow-hidden bg-stone-50 md:border-r border-stone-200',
+          'flex-1 min-h-0 md:flex-[7] flex flex-col overflow-hidden bg-stone-50 dark:bg-stone-900 md:border-r border-stone-200 dark:border-stone-700',
           isMobile && mobileView !== 'matrix' ? 'hidden' : '',
         ].join(' ')}>
           {puzzle && (
-            <div className="px-2 md:px-4 min-h-10 py-1.5 md:py-0 md:h-10 border-b border-stone-200 flex flex-wrap items-center justify-between gap-y-1 bg-white">
+            <div className="px-2 md:px-4 min-h-10 py-1.5 md:py-0 md:h-10 border-b border-stone-200 dark:border-stone-700 flex flex-wrap items-center justify-between gap-y-1 bg-white dark:bg-stone-900">
               <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs flex-wrap">
-                <span className="flex items-center gap-1 md:gap-1.5 bg-stone-50 text-stone-500 rounded-full px-2 md:px-2.5 py-0.5 md:py-1 font-medium border border-stone-200">
+                <span className="flex items-center gap-1 md:gap-1.5 bg-stone-50 dark:bg-stone-800 text-stone-500 dark:text-stone-400 rounded-full px-2 md:px-2.5 py-0.5 md:py-1 font-medium border border-stone-200 dark:border-stone-700">
                   <span className="text-red-500">✕</span><span>排除</span>
                   <span className="text-stone-300 mx-0.5">→</span>
                   <span className="text-emerald-600">✓</span><span>确认</span>
@@ -313,14 +378,14 @@ function GamePageInner() {
                     <button
                       onClick={undo}
                       disabled={undoStack.length === 0}
-                      className="flex items-center gap-1 bg-stone-100 text-stone-500 rounded-full px-2 md:px-2.5 py-0.5 md:py-1 font-medium hover:bg-stone-200 hover:text-stone-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center gap-1 bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 rounded-full px-2 md:px-2.5 py-0.5 md:py-1 font-medium hover:bg-stone-200 dark:hover:bg-stone-700 hover:text-stone-700 dark:hover:text-stone-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       ↩<span className="hidden md:inline"> {isMac ? '⌘+Z' : 'Ctrl+Z'}</span> 撤回
                     </button>
                     <button
                       onClick={redo}
                       disabled={redoStack.length === 0}
-                      className="flex items-center gap-1 bg-stone-100 text-stone-500 rounded-full px-2 md:px-2.5 py-0.5 md:py-1 font-medium hover:bg-stone-200 hover:text-stone-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center gap-1 bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 rounded-full px-2 md:px-2.5 py-0.5 md:py-1 font-medium hover:bg-stone-200 dark:hover:bg-stone-700 hover:text-stone-700 dark:hover:text-stone-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       ↪<span className="hidden md:inline"> {isMac ? '⌘+⇧+Z' : 'Ctrl+Y'}</span> 重做
                     </button>
@@ -332,7 +397,7 @@ function GamePageInner() {
                   <span
                     className={[
                       'flex items-center gap-1 text-[10px] md:text-[11px] px-1.5 md:px-2 py-0.5 rounded transition-colors',
-                      savePulse ? 'text-emerald-700 bg-emerald-50' : 'text-stone-400',
+                      savePulse ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50' : 'text-stone-400 dark:text-stone-500',
                     ].join(' ')}
                     title="所有进度均实时保存到本机浏览器"
                   >
@@ -342,20 +407,24 @@ function GamePageInner() {
                     <span className="hidden md:inline">已实时存至本地</span>
                   </span>
                 )}
-                {!isComplete && (
+                <div className="relative">
                   <button
-                    onClick={applyHint}
-                    className="text-xs text-amber-600 hover:text-amber-800 px-2 py-1 rounded hover:bg-amber-50 transition-colors"
+                    onDoubleClick={resetPuzzle}
+                    onClick={() => setShowResetHint(true)}
+                    className="text-xs text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-200 px-2 py-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors select-none"
+                    title="双击以重置当前进度"
                   >
-                    提示
+                    重置
                   </button>
-                )}
-                <button
-                  onClick={resetPuzzle}
-                  className="text-xs text-stone-400 hover:text-stone-700 px-2 py-1 rounded hover:bg-stone-100 transition-colors"
-                >
-                  重置
-                </button>
+                  {showResetHint && (
+                    <span
+                      role="status"
+                      className="absolute right-0 top-full mt-1 z-20 whitespace-nowrap rounded bg-stone-800 text-white text-[11px] px-2 py-1 shadow-lg before:content-[''] before:absolute before:right-3 before:-top-1 before:w-2 before:h-2 before:bg-stone-800 before:rotate-45"
+                    >
+                      双击「重置」才会清空当前进度
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -394,12 +463,13 @@ function GamePageInner() {
                         difficulty={difficulty}
                         onNext={handleNextDifficulty}
                         hasNext={hasNextDifficulty}
+                        autoAdvanceTrigger={justCompletedAt}
                       />
                     </div>
                   )}
                 </>
               ) : (
-                <div className="text-stone-400 text-sm animate-pulse">载入案件中…</div>
+                <div className="text-stone-400 dark:text-stone-500 text-sm animate-pulse">载入案件中…</div>
               )}
             </div>
           </div>
@@ -408,7 +478,7 @@ function GamePageInner() {
 
         {/* Clue Panel: desktop right(30%) / mobile full-screen via view switcher */}
         <div className={[
-          'flex-1 min-h-0 md:flex-[3] flex flex-col overflow-hidden bg-white',
+          'flex-1 min-h-0 md:flex-[3] flex flex-col overflow-hidden bg-white dark:bg-stone-900',
           isMobile && mobileView !== 'clues' ? 'hidden' : '',
         ].join(' ')}>
           {puzzle ? (
