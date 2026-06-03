@@ -12,6 +12,12 @@
 
 </div>
 
+<p align="center">
+  <picture>
+    <img src="./.github/assets/home.png">
+  </picture>
+</p>
+
 ## 📖 项目介绍
 
 「侦探事务所」是一个**逻辑推理网页游戏**。如果你玩过"**爱因斯坦的谜题**"（也叫斑马谜题 / Zebra Puzzle）——「英国人住红房子，瑞典人养狗，斑马是谁的？」——本游戏就是它的**侦探主题剧情版**。
