@@ -38,12 +38,13 @@ export function MatrixGridMobile({
   }, [hintCell, secondaries.length]);
 
   const n = primaryCat.items.length;
-  // Width is constrained by narrow phones (320–360px) — keep cells compact horizontally.
-  // Height has no width constraint, so make rows much taller so the table fills the
-  // available vertical space and doesn't look small relative to the page.
-  const CELL_W  = n >= 6 ? 38 : n === 5 ? 44 : 50;
+  // Tap-target floor: 44px (Apple HIG, Material Design). On hard mode (n=6) the
+  // resulting table is wider than ~360px viewports — accept horizontal scroll
+  // inside the table card. Height also stays generous so the table fills the
+  // matrix area visually instead of looking small relative to the page.
+  const CELL_W  = n >= 6 ? 44 : n === 5 ? 48 : 54;
   const CELL_H  = n >= 6 ? 56 : n === 5 ? 60 : 64;
-  const LABEL_W = n >= 6 ? 62 : 72;
+  const LABEL_W = n >= 6 ? 56 : 64;
 
   const currentCat = secondaries[activeTab];
   const catIdx     = activeTab + 1;
@@ -79,14 +80,14 @@ export function MatrixGridMobile({
                 'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg border text-[11px] font-medium transition-colors min-w-[44px]',
                 isActive
                   ? 'bg-amber-600 border-amber-600 text-white shadow-sm'
-                  : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50',
+                  : 'bg-white dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700',
               ].join(' ')}
             >
               <span className="text-sm leading-none" aria-hidden>{cat.icon}</span>
               <span className="leading-tight">{cat.name}</span>
               <span className={[
                 'text-[9px] tabular-nums rounded px-1',
-                isActive ? 'bg-amber-700/40 text-amber-50' : 'bg-stone-100 text-stone-500',
+                isActive ? 'bg-amber-700/40 text-amber-50' : 'bg-stone-100 dark:bg-stone-700 text-stone-500 dark:text-stone-300',
               ].join(' ')}>
                 {done}/{n}
               </span>
@@ -95,16 +96,18 @@ export function MatrixGridMobile({
         })}
       </div>
 
-      {/* Table area — flex-1 owns remaining width; table centered inside it */}
+      {/* Table area — `overflow-x-auto` lets the wider hard-mode table scroll
+          horizontally instead of squashing cells below the 44px tap-target floor. */}
       <div className="flex-1 min-w-0 flex justify-center">
-      <div className="rounded-xl overflow-hidden shadow-sm ring-1 ring-stone-200 bg-white">
+      <div className="rounded-xl overflow-hidden shadow-sm ring-1 ring-stone-200 dark:ring-stone-700 bg-white dark:bg-stone-900 max-w-full">
+      <div className="overflow-x-auto overscroll-x-contain">
         <table className="border-collapse select-none text-[11px]">
           <thead>
-            <tr className="border-b-2 border-stone-200 bg-stone-50">
-              <th style={{ width: LABEL_W, height: 56 }} className="text-[10px] text-stone-400 px-2 align-bottom pb-1.5">
+            <tr className="border-b-2 border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
+              <th style={{ width: LABEL_W, height: 56 }} className="text-[10px] text-stone-400 dark:text-stone-500 px-2 align-bottom pb-1.5">
                 <div className="text-left leading-tight">
                   ↓ {primaryCat.name}<br />
-                  <span className="text-stone-400">/ {currentCat.name} →</span>
+                  <span className="text-stone-400 dark:text-stone-500">/ {currentCat.name} →</span>
                 </div>
               </th>
               {currentCat.items.map(item => (
@@ -116,7 +119,7 @@ export function MatrixGridMobile({
                 >
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <span
-                      className="text-stone-500 text-[11px]"
+                      className="text-stone-500 dark:text-stone-400 text-[11px]"
                       style={{ writingMode: 'vertical-lr', textAlign: 'center' }}
                     >
                       {item.name.split(/(\d+)/).map((part, i) =>
@@ -138,12 +141,12 @@ export function MatrixGridMobile({
                 <tr
                   key={primary.id}
                   className={[
-                    di % 2 === 1 ? 'bg-stone-50/60' : 'bg-white',
-                    !isLastRow ? 'border-b border-stone-100' : '',
+                    di % 2 === 1 ? 'bg-stone-50/60 dark:bg-stone-800/60' : 'bg-white dark:bg-stone-900',
+                    !isLastRow ? 'border-b border-stone-100 dark:border-stone-800' : '',
                   ].join(' ')}
                 >
                   <td
-                    className="text-right pr-2 text-stone-600 font-medium whitespace-nowrap border-r-2 border-stone-200 cursor-default select-none text-[11px]"
+                    className="text-right pr-2 text-stone-600 dark:text-stone-300 font-medium whitespace-nowrap border-r-2 border-stone-200 dark:border-stone-700 cursor-default select-none text-[11px]"
                     style={{ height: CELL_H }}
                     onClick={() => onClickTerm?.(primary.name)}
                   >
@@ -177,6 +180,7 @@ export function MatrixGridMobile({
             })}
           </tbody>
         </table>
+      </div>
       </div>
       </div>
     </div>
