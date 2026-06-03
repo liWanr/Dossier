@@ -360,10 +360,11 @@ function GamePageInner() {
             </div>
           )}
 
-          <div className="flex-1 overflow-auto p-3 md:p-6">
-            {/* Inner wrapper centers content when it fits, scrolls naturally when it doesn't —
-                avoids justify-center clipping the CompletionBanner on short viewports. */}
-            <div className="min-h-full flex flex-col items-center justify-center gap-3">
+          <div className="flex-1 overflow-auto p-3 md:p-6 flex flex-col">
+            {/* On mobile we want MatrixGridMobile to fill the matrix view's
+                vertical space (so left tabs can spread out and the layout
+                doesn't feel half-empty). On desktop we keep `m-auto` centering. */}
+            <div className="flex-1 md:flex-none md:m-auto flex flex-col items-stretch md:items-center gap-3">
               {puzzle ? (
                 <>
                   {isMobile ? (
