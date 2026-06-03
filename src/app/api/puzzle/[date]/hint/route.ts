@@ -42,7 +42,7 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid difficulty' }, { status: 400 });
   }
 
-  const all = getPuzzlesByDateInternal(date);
+  const all = await getPuzzlesByDateInternal(date);
   if (!all) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   const puzzle = all[difficulty];
   if (!puzzle) return NextResponse.json({ error: 'Not found' }, { status: 404 });

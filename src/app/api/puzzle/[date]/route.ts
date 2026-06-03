@@ -31,15 +31,15 @@ export async function GET(
     );
   }
 
-  let puzzles = getPuzzlesByDate(date);
+  let puzzles = await getPuzzlesByDate(date);
 
   if (!puzzles) {
     // Fallback to the most recent available puzzle that is also within the
     // latest playable date.
-    const dbLatest = getLatestDate();
+    const dbLatest = await getLatestDate();
     if (!dbLatest) return NextResponse.json({ error: 'No puzzle available' }, { status: 404 });
     const fallback = dbLatest > latest ? latest : dbLatest;
-    puzzles = getPuzzlesByDate(fallback);
+    puzzles = await getPuzzlesByDate(fallback);
     if (!puzzles) return NextResponse.json({ error: 'No puzzle available' }, { status: 404 });
   }
 

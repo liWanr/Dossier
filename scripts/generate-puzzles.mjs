@@ -12,14 +12,29 @@
  *   - 涉侦探类模板每题至多 1 次，避免「侦探名 + 动作」重复
  */
 
-import Database from 'better-sqlite3';
+import { createClient } from '@libsql/client';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { themeForDate, posTxt, negTxt, ordTxt, rangeTxt, formatItem } from './themes/index.mjs';
 import { TIME_ITEMS, getTimePeriod } from './themes/_shared.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const db = new Database(path.join(__dirname, '../data/puzzles.db'));
+
+// 支持 Turso（Vercel 部署）和本地开发
+const db = createClient({
+  url: process.env.TURSO_CONNECTION_URL || 'file:' + path.join(__dirname, '../data/puzzles.db'),
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
+
+// 初始化数据库表
+await db.execute(`
+  CREATE TABLE IF NOT EXISTS puzzles (
+    date       TEXT NOT NULL,
+    difficulty TEXT NOT NULL CHECK(difficulty IN ('easy', 'medium', 'hard')),
+    data       TEXT NOT NULL,
+    PRIMARY KEY (date, difficulty)
+  )
+`);
 
 // ===================== 伪随机数生成器 =====================
 
@@ -508,8 +523,6 @@ function dateRange(start, end) {
 }
 
 const dates = dateRange('2026-01-01', '2026-12-31');
-const stmt = db.prepare('INSERT OR REPLACE INTO puzzles (date, difficulty, data) VALUES (?, ?, ?)');
-const insertAll = db.transaction(rows => { for (const r of rows) stmt.run(r.date, r.diff, r.data); });
 
 console.log(`生成 ${dates.length} 天 × 3 档难度 = ${dates.length*3} 道题…`);
 const rows = [];
@@ -550,7 +563,15 @@ for (const date of dates) {
     rows.push({ date, diff, data: JSON.stringify(puzzle) });
   }
 }
-insertAll(rows);
+
+// 异步插入所有数据
+for (const row of rows) {
+  await db.execute({
+    sql: 'INSERT OR REPLACE INTO puzzles (date, difficulty, data) VALUES (?, ?, ?)',
+    args: [row.date, row.diff, row.data],
+  });
+}
+
 console.log(`完成！插入 ${rows.length} 道题，验证失败 ${failed} 道。`);
 console.log('主题分布:');
 for (const [id, c] of Object.entries(themeStats).sort((a,b) => b[1]-a[1])) {

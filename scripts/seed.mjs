@@ -2,20 +2,20 @@
  * One-time seed: import existing TypeScript puzzle data into puzzles.db
  * Usage: node scripts/seed.mjs
  */
-import Database from 'better-sqlite3';
-import { mkdirSync } from 'fs';
+import { createClient } from '@libsql/client';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, '..', 'data');
-const DB_PATH  = join(DATA_DIR, 'puzzles.db');
 
-mkdirSync(DATA_DIR, { recursive: true });
+// 支持 Turso（Vercel 部署）和本地开发
+const db = createClient({
+  url: process.env.TURSO_CONNECTION_URL || 'file:' + join(__dirname, '..', 'data', 'puzzles.db'),
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
-const db = new Database(DB_PATH);
-db.pragma('journal_mode = WAL');
-db.exec(`
+// 初始化数据库表
+await db.execute(`
   CREATE TABLE IF NOT EXISTS puzzles (
     date       TEXT NOT NULL,
     difficulty TEXT NOT NULL CHECK(difficulty IN ('easy', 'medium', 'hard')),
@@ -146,14 +146,22 @@ const hard = {
 
 // ── Insert ────────────────────────────────────────────────────────────────────
 
-const insert = db.prepare('INSERT OR REPLACE INTO puzzles (date, difficulty, data) VALUES (?, ?, ?)');
-const seeded = db.transaction(() => {
-  insert.run(DATE, 'easy',   JSON.stringify(easy));
-  insert.run(DATE, 'medium', JSON.stringify(medium));
-  insert.run(DATE, 'hard',   JSON.stringify(hard));
+await db.execute({
+  sql: 'INSERT OR REPLACE INTO puzzles (date, difficulty, data) VALUES (?, ?, ?)',
+  args: [DATE, 'easy', JSON.stringify(easy)],
 });
-seeded();
 
-const count = db.prepare('SELECT COUNT(*) AS n FROM puzzles').get();
-console.log(`✓ Seeded ${count.n} puzzle rows into ${DB_PATH}`);
-db.close();
+await db.execute({
+  sql: 'INSERT OR REPLACE INTO puzzles (date, difficulty, data) VALUES (?, ?, ?)',
+  args: [DATE, 'medium', JSON.stringify(medium)],
+});
+
+await db.execute({
+  sql: 'INSERT OR REPLACE INTO puzzles (date, difficulty, data) VALUES (?, ?, ?)',
+  args: [DATE, 'hard', JSON.stringify(hard)],
+});
+
+const result = await db.execute('SELECT COUNT(*) AS n FROM puzzles');
+const count = result.rows[0];
+console.log(`✓ Seeded ${count.n} puzzle rows`);
+
