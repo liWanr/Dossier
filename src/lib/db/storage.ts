@@ -60,14 +60,35 @@ const migrations: Migration[] = [
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
+// Storage health — set on first failed IDB open (Safari private mode, disabled
+// IDB, quota exceeded, etc.). UI can read via getStorageStatus() to surface a
+// friendly warning instead of silently losing data.
+type StorageStatus = { ok: true } | { ok: false; reason: string };
+let _storageStatus: StorageStatus = { ok: true };
+const _storageStatusListeners = new Set<(s: StorageStatus) => void>();
+
+export function getStorageStatus(): StorageStatus { return _storageStatus; }
+export function onStorageStatusChange(cb: (s: StorageStatus) => void): () => void {
+  _storageStatusListeners.add(cb);
+  return () => _storageStatusListeners.delete(cb);
+}
+function setStorageFailure(reason: string) {
+  if (_storageStatus.ok) {
+    _storageStatus = { ok: false, reason };
+    _storageStatusListeners.forEach(cb => { try { cb(_storageStatus); } catch { /* ignore */ } });
+  }
+}
+
 function getDB() {
   if (typeof window === 'undefined') return Promise.reject(new Error('SSR'));
+  if (typeof indexedDB === 'undefined') {
+    setStorageFailure('当前浏览器不支持本地存储（IndexedDB）');
+    return Promise.reject(new Error('IndexedDB unavailable'));
+  }
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
       async upgrade(db, oldVersion, newVersion, tx) {
         const target = newVersion ?? DB_VERSION;
-        // Run every pending migration in order. Each receives the same upgrade
-        // transaction `tx`, so all step writes commit (or roll back) atomically.
         for (let v = oldVersion; v < target; v++) {
           const step = migrations[v];
           if (!step) {
@@ -78,7 +99,7 @@ function getDB() {
             await step(db, tx as UpgradeTx);
           } catch (e) {
             console.error(`[IDB] Migration v${v} → v${v + 1} failed:`, e);
-            throw e; // abort the upgrade transaction; user data stays at oldVersion
+            throw e;
           }
         }
       },
@@ -86,14 +107,20 @@ function getDB() {
         console.warn('[IDB] upgrade blocked by another open connection in this browser');
       },
       blocking() {
-        // Another tab is trying to upgrade. Close so it can proceed; the caller
-        // will reopen lazily on next access.
         dbPromise = null;
       },
       terminated() {
         console.warn('[IDB] connection terminated unexpectedly');
         dbPromise = null;
       },
+    }).catch(err => {
+      // Common Safari private-mode + iOS storage-disabled error path
+      const msg = (err && err.name === 'InvalidStateError')
+        ? '本地存储不可用，可能是隐私 / 无痕浏览模式'
+        : `本地存储初始化失败：${err?.message ?? '未知错误'}`;
+      setStorageFailure(msg);
+      dbPromise = null;
+      throw err;
     });
   }
   return dbPromise;
@@ -113,6 +140,12 @@ export async function saveHistoryRecord(record: HistoryRecord): Promise<void> {
   const db = await getDB();
   await db.put('history', record);
   broadcast({ kind: 'history', date: record.date });
+}
+
+export async function deleteHistoryRecord(date: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('history', date);
+  broadcast({ kind: 'history', date });
 }
 
 interface PersistedState {
@@ -164,23 +197,54 @@ export type SyncMessage =
   | { kind: 'history'; date: string };
 
 const CHANNEL_NAME = 'detective-bureau-sync';
+const LS_FALLBACK_KEY = 'detective-bureau-sync-ls';
 let _channel: BroadcastChannel | null = null;
 
+function hasBroadcastChannel(): boolean {
+  return typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined';
+}
+
 function getChannel(): BroadcastChannel | null {
-  if (typeof window === 'undefined') return null;
-  if (typeof BroadcastChannel === 'undefined') return null;
-  if (!_channel) _channel = new BroadcastChannel(CHANNEL_NAME);
+  if (!hasBroadcastChannel()) return null;
+  if (!_channel) {
+    try { _channel = new BroadcastChannel(CHANNEL_NAME); }
+    catch { return null; }
+  }
   return _channel;
 }
 
 function broadcast(msg: SyncMessage) {
-  try { getChannel()?.postMessage(msg); } catch { /* ignore — best effort */ }
+  const ch = getChannel();
+  if (ch) {
+    try { ch.postMessage(msg); return; } catch { /* fall through to LS */ }
+  }
+  // Fallback for Safari < 15.4 and other browsers without BroadcastChannel:
+  // write to localStorage and immediately clear; other tabs receive a `storage`
+  // event regardless. Wrap the message with a timestamp so identical successive
+  // writes still fire the event.
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(LS_FALLBACK_KEY, JSON.stringify({ ts: Date.now(), msg }));
+    localStorage.removeItem(LS_FALLBACK_KEY);
+  } catch { /* private mode etc. — best effort */ }
 }
 
 export function subscribeToSync(handler: (msg: SyncMessage) => void): () => void {
   const ch = getChannel();
-  if (!ch) return () => {};
-  const listener = (e: MessageEvent<SyncMessage>) => handler(e.data);
-  ch.addEventListener('message', listener);
-  return () => ch.removeEventListener('message', listener);
+  if (ch) {
+    const listener = (e: MessageEvent<SyncMessage>) => handler(e.data);
+    ch.addEventListener('message', listener);
+    return () => ch.removeEventListener('message', listener);
+  }
+  if (typeof window === 'undefined') return () => {};
+  // Storage event fallback
+  const onStorage = (e: StorageEvent) => {
+    if (e.key !== LS_FALLBACK_KEY || !e.newValue) return;
+    try {
+      const parsed = JSON.parse(e.newValue) as { ts: number; msg: SyncMessage };
+      handler(parsed.msg);
+    } catch { /* ignore malformed */ }
+  };
+  window.addEventListener('storage', onStorage);
+  return () => window.removeEventListener('storage', onStorage);
 }
