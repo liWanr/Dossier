@@ -40,10 +40,10 @@ function buildYearWeeks(year: number): string[][] {
 }
 
 function cellColor(record: HistoryRecord | undefined, active = false): string {
-  if (!record?.easy) return active ? 'bg-stone-200' : 'bg-stone-100';
+  if (!record?.easy) return active ? 'bg-stone-200 dark:bg-stone-700' : 'bg-stone-100 dark:bg-stone-800';
   if (record.easy && record.medium && record.hard) return active ? 'bg-emerald-600' : 'bg-emerald-500';
-  if (record.easy && record.medium) return active ? 'bg-emerald-500' : 'bg-emerald-300';
-  return active ? 'bg-emerald-400' : 'bg-emerald-200';
+  if (record.easy && record.medium) return active ? 'bg-emerald-500' : 'bg-emerald-300 dark:bg-emerald-700';
+  return active ? 'bg-emerald-400' : 'bg-emerald-200 dark:bg-emerald-800';
 }
 
 function formatDateChinese(dateStr: string) {
@@ -70,9 +70,9 @@ export function ContributionGraph({ history, today }: ContributionGraphProps) {
   return (
     <div>
       {/* Year count header */}
-      <p className="text-sm text-stone-500 mb-4">
+      <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">
         {yearDays > 0
-          ? <><span className="font-semibold text-stone-700">{yearDays}</span> 天完成了推理挑战</>
+          ? <><span className="font-semibold text-stone-700 dark:text-stone-200">{yearDays}</span> 天完成了推理挑战</>
           : year + ' 年暂无记录'}
       </p>
 
@@ -83,7 +83,7 @@ export function ContributionGraph({ history, today }: ContributionGraphProps) {
             {/* Day-of-week labels — fixed width, no shrink */}
             <div className="flex flex-col gap-[2px] shrink-0 pt-[18px] w-5">
               {DAY_LABELS.map((label, i) => (
-                <div key={i} className="text-[9px] text-stone-400 flex items-center justify-end pr-0.5 aspect-square">
+                <div key={i} className="text-[9px] text-stone-400 dark:text-stone-500 flex items-center justify-end pr-0.5 aspect-square">
                   {label}
                 </div>
               ))}
@@ -94,7 +94,7 @@ export function ContributionGraph({ history, today }: ContributionGraphProps) {
               const monthStart = week.find(d => d.endsWith('-01') && d.startsWith(yearPrefix));
               return (
                 <div key={wi} className="flex flex-col gap-[2px] flex-1 min-w-0">
-                  <div className="h-[18px] text-[10px] text-stone-400 leading-none overflow-hidden whitespace-nowrap">
+                  <div className="h-[18px] text-[10px] text-stone-400 dark:text-stone-500 leading-none overflow-hidden whitespace-nowrap">
                     {monthStart ? MONTHS[parseInt(monthStart.split('-')[1]) - 1] : ''}
                   </div>
                   {week.map(dateStr => {
@@ -116,7 +116,7 @@ export function ContributionGraph({ history, today }: ContributionGraphProps) {
                         className={[
                           'w-full aspect-square rounded-sm transition-all duration-150',
                           isFuture
-                            ? 'bg-stone-50 cursor-default'
+                            ? 'bg-stone-50 dark:bg-stone-800/50 cursor-default'
                             : [cellColor(record, isSelected), 'cursor-pointer'].join(' '),
                           selected && !isSelected ? 'opacity-60' : '',
                         ].join(' ')}
@@ -129,11 +129,11 @@ export function ContributionGraph({ history, today }: ContributionGraphProps) {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-1 mt-3 text-[10px] text-stone-400">
+          <div className="flex items-center gap-1 mt-3 text-[10px] text-stone-400 dark:text-stone-500">
             <span className="mr-0.5">少</span>
-            <div className="w-3 h-3 rounded-sm bg-stone-100 ring-1 ring-stone-200" />
-            <div className="w-3 h-3 rounded-sm bg-emerald-200" />
-            <div className="w-3 h-3 rounded-sm bg-emerald-300" />
+            <div className="w-3 h-3 rounded-sm bg-stone-100 dark:bg-stone-800 ring-1 ring-stone-200 dark:ring-stone-700" />
+            <div className="w-3 h-3 rounded-sm bg-emerald-200 dark:bg-emerald-800" />
+            <div className="w-3 h-3 rounded-sm bg-emerald-300 dark:bg-emerald-700" />
             <div className="w-3 h-3 rounded-sm bg-emerald-500" />
             <span className="ml-0.5">多</span>
           </div>
@@ -143,18 +143,29 @@ export function ContributionGraph({ history, today }: ContributionGraphProps) {
 
       {/* Detail panel */}
       {selected && (
-        <div className="mt-4 p-4 bg-stone-50 rounded-lg border border-stone-200">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-stone-700">{formatDateChinese(selected)}</p>
-            <button
-              onClick={() => router.push(`/?date=${selected.replace(/-/g, '')}`)}
-              className="text-xs px-3 py-1.5 rounded-md bg-amber-500 text-white hover:bg-amber-600 transition-colors"
-            >
-              {selectedRecord?.easy ? '前往复盘' : '前往挑战'}
-            </button>
+        <div className="mt-4 p-4 bg-stone-50 dark:bg-stone-800/50 rounded-lg border border-stone-200 dark:border-stone-700">
+          <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+            <p className="text-sm font-semibold text-stone-700 dark:text-stone-200">{formatDateChinese(selected)}</p>
+            <div className="flex gap-1.5">
+              {selectedRecord?.easy && (
+                <button
+                  onClick={() => router.push(`/?date=${selected.replace(/-/g, '')}&practice=1`)}
+                  className="text-xs px-3 py-1.5 rounded-md border border-amber-500 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors"
+                  title="不影响今日战绩，可重新解答"
+                >
+                  练习
+                </button>
+              )}
+              <button
+                onClick={() => router.push(`/?date=${selected.replace(/-/g, '')}`)}
+                className="text-xs px-3 py-1.5 rounded-md bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+              >
+                {selectedRecord?.easy ? '前往复盘' : '前往挑战'}
+              </button>
+            </div>
           </div>
           {!selectedRecord ? (
-            <p className="text-stone-400 text-sm">当日未完成任何挑战</p>
+            <p className="text-stone-400 dark:text-stone-500 text-sm">当日未完成任何挑战</p>
           ) : (
             <div className="flex gap-2">
               {(['easy', 'medium', 'hard'] as const).map(d => {
@@ -163,7 +174,7 @@ export function ContributionGraph({ history, today }: ContributionGraphProps) {
                 return (
                   <div key={d} className={[
                     'flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md',
-                    done ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-400',
+                    done ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : 'bg-stone-100 dark:bg-stone-700 text-stone-400 dark:text-stone-500',
                   ].join(' ')}>
                     <span>{done ? '✓' : '·'}</span>
                     <span className="font-medium">{labels[d]}</span>
