@@ -10,10 +10,13 @@ interface MatrixCellProps {
   isManual?: boolean;
   isAuto?: boolean;
   size?: number;
+  // Optional separate height — for layouts that want rectangular (e.g. tall) cells
+  // without changing horizontal width. Defaults to `size`.
+  height?: number;
   isHinted?: boolean;
 }
 
-export function MatrixCell({ state, onClick, disabled, isManual, isAuto, size = 36, isHinted }: MatrixCellProps) {
+export function MatrixCell({ state, onClick, disabled, isManual, isAuto, size = 36, height, isHinted }: MatrixCellProps) {
   const colorMode    = useSettingsStore(s => s.colorMode);
   const highContrast = useSettingsStore(s => s.highContrast);
 
@@ -62,7 +65,7 @@ export function MatrixCell({ state, onClick, disabled, isManual, isAuto, size = 
         isHinted ? 'bg-amber-100 animate-pulse outline outline-2 outline-amber-400' : '',
         bg,
       ].join(' ')}
-      style={{ width: size, height: size }}
+      style={{ width: size, height: height ?? size }}
       aria-label={state === 'confirmed' ? '确认' : state === 'excluded' ? '排除' : '未知'}
     >
       {state === 'confirmed' && (
