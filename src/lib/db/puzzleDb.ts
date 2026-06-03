@@ -9,7 +9,7 @@ export async function getPuzzlesByDateInternal(date: string): Promise<DailyPuzzl
     args: [date],
   });
 
-  const rows = result.rows as { difficulty: string; data: string }[];
+  const rows = result.rows as unknown as { difficulty: string; data: string }[];
 
   if (rows.length < 3) return null;
 
@@ -44,7 +44,7 @@ export async function getLatestDate(): Promise<string | null> {
     'SELECT DISTINCT date FROM puzzles ORDER BY date DESC LIMIT 1'
   );
   
-  const row = result.rows[0] as { date: string } | undefined;
+  const row = result.rows[0] as unknown as { date: string } | undefined;
   return row?.date ?? null;
 }
 
