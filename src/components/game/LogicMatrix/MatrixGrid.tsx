@@ -27,19 +27,19 @@ export function MatrixGrid({ puzzle, matrixState, onCellClick, onHoverTerm, onCl
   const HEADER_H = totalCols > 24 ? 64 : totalCols > 15 ? 66 : 72;
 
   return (
-    <div className="inline-block rounded-xl overflow-hidden shadow-sm ring-1 ring-stone-200 bg-white">
+    <div className="inline-block rounded-xl overflow-hidden shadow-sm ring-1 ring-stone-200 dark:ring-stone-700 bg-white dark:bg-stone-900">
       <table className="border-collapse select-none text-[11px]">
         <thead>
           {/* Category group headers */}
-          <tr className="bg-stone-50">
+          <tr className="bg-stone-50 dark:bg-stone-800">
             <th rowSpan={2} style={{ width: LABEL_W }} />
             {colCats.map((cat, gi) => (
               <th
                 key={cat.id}
                 colSpan={cat.items.length}
                 className={[
-                  'text-center text-[11px] font-semibold text-stone-400 tracking-wide uppercase py-1.5',
-                  gi > 0 ? 'border-l-2 border-stone-200' : '',
+                  'text-center text-[11px] font-semibold text-stone-400 dark:text-stone-500 tracking-wide uppercase py-1.5',
+                  gi > 0 ? 'border-l-2 border-stone-200 dark:border-stone-700' : '',
                 ].join(' ')}
               >
                 {cat.name}
@@ -48,14 +48,14 @@ export function MatrixGrid({ puzzle, matrixState, onCellClick, onHoverTerm, onCl
           </tr>
 
           {/* Item name headers */}
-          <tr className="border-b-2 border-stone-200">
+          <tr className="border-b-2 border-stone-200 dark:border-stone-700">
             {colCats.map((cat, gi) =>
               cat.items.map((item, ii) => (
                 <th
                   key={item.id}
                   className={[
-                    'bg-white align-bottom pb-2 font-normal cursor-default select-none',
-                    ii === 0 && gi > 0 ? 'border-l-2 border-stone-200' : '',
+                    'bg-white dark:bg-stone-900 align-bottom pb-2 font-normal cursor-default select-none',
+                    ii === 0 && gi > 0 ? 'border-l-2 border-stone-200 dark:border-stone-700' : '',
                   ].join(' ')}
                   style={{ width: CELL, height: HEADER_H }}
                   onMouseEnter={() => onHoverTerm?.(item.name)}
@@ -64,7 +64,7 @@ export function MatrixGrid({ puzzle, matrixState, onCellClick, onHoverTerm, onCl
                 >
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <span
-                      className="text-stone-500 text-[11px]"
+                      className="text-stone-500 dark:text-stone-400 text-[11px]"
                       style={{ writingMode: 'vertical-lr', textAlign: 'center' }}
                     >
                       {item.name.split(/(\d+)/).map((part, i) =>
@@ -87,12 +87,12 @@ export function MatrixGrid({ puzzle, matrixState, onCellClick, onHoverTerm, onCl
               <tr
                 key={detective.id}
                 className={[
-                  di % 2 === 1 ? 'bg-stone-50/60' : 'bg-white',
-                  !isLast ? 'border-b border-stone-100' : '',
+                  di % 2 === 1 ? 'bg-stone-50/60 dark:bg-stone-800/60' : 'bg-white dark:bg-stone-900',
+                  !isLast ? 'border-b border-stone-100 dark:border-stone-800' : '',
                 ].join(' ')}
               >
                 <td
-                  className="text-right pr-3 text-stone-600 font-medium whitespace-nowrap border-r-2 border-stone-200 cursor-default select-none"
+                  className="text-right pr-3 text-stone-600 dark:text-stone-300 font-medium whitespace-nowrap border-r-2 border-stone-200 dark:border-stone-700 cursor-default select-none"
                   style={{ height: CELL }}
                   onMouseEnter={() => onHoverTerm?.(detective.name)}
                   onMouseLeave={() => onHoverTerm?.(null)}
@@ -116,7 +116,7 @@ export function MatrixGrid({ puzzle, matrixState, onCellClick, onHoverTerm, onCl
                         key={item.id}
                         className={[
                           'p-0',
-                          ii === 0 && gi > 0 ? 'border-l-2 border-stone-200' : '',
+                          ii === 0 && gi > 0 ? 'border-l-2 border-stone-200 dark:border-stone-700' : '',
                         ].join(' ')}
                       >
                         <MatrixCell
