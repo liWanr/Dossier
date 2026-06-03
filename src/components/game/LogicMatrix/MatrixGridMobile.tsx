@@ -38,8 +38,11 @@ export function MatrixGridMobile({
   }, [hintCell, secondaries.length]);
 
   const n = primaryCat.items.length;
-  // Cell sizes so 6 cells + label fit on a 320px phone
-  const CELL    = n >= 6 ? 38 : n === 5 ? 44 : 50;
+  // Width is constrained by narrow phones (320–360px) — keep cells compact horizontally.
+  // Height has no width constraint, so make rows much taller so the table fills the
+  // available vertical space and doesn't look small relative to the page.
+  const CELL_W  = n >= 6 ? 38 : n === 5 ? 44 : 50;
+  const CELL_H  = n >= 6 ? 56 : n === 5 ? 60 : 64;
   const LABEL_W = n >= 6 ? 62 : 72;
 
   const currentCat = secondaries[activeTab];
@@ -59,10 +62,12 @@ export function MatrixGridMobile({
   };
 
   return (
-    <div className="w-full flex flex-col items-center gap-3">
-      {/* Tab strip — horizontal row above the table so the table below stays
-          at true horizontal center of its container. */}
-      <div className="flex gap-1.5 overflow-x-auto max-w-full pb-1 -mx-1 px-1 snap-x">
+    /* Fills the matrix area's full height on mobile (parent gives `flex-1`).
+       Tabs stretch vertically via `justify-around` to soak up empty space;
+       table stays centered both axes. */
+    <div className="w-full h-full flex items-center gap-2">
+      {/* Left tab column — stretches to full height, evenly distributes its buttons */}
+      <div className="self-stretch flex flex-col justify-around shrink-0 py-2">
         {secondaries.map((cat, gi) => {
           const isActive = gi === activeTab;
           const done = tabProgress(gi);
@@ -71,16 +76,16 @@ export function MatrixGridMobile({
               key={cat.id}
               onClick={() => setActiveTab(gi)}
               className={[
-                'shrink-0 snap-start flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium whitespace-nowrap transition-colors',
+                'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg border text-[11px] font-medium transition-colors min-w-[44px]',
                 isActive
                   ? 'bg-amber-600 border-amber-600 text-white shadow-sm'
                   : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50',
               ].join(' ')}
             >
-              <span aria-hidden>{cat.icon}</span>
-              <span>{cat.name}</span>
+              <span className="text-sm leading-none" aria-hidden>{cat.icon}</span>
+              <span className="leading-tight">{cat.name}</span>
               <span className={[
-                'text-[10px] tabular-nums rounded px-1.5 py-px',
+                'text-[9px] tabular-nums rounded px-1',
                 isActive ? 'bg-amber-700/40 text-amber-50' : 'bg-stone-100 text-stone-500',
               ].join(' ')}>
                 {done}/{n}
@@ -90,9 +95,8 @@ export function MatrixGridMobile({
         })}
       </div>
 
-      {/* Active subgrid — explicit flex/justify-center wrapper guarantees
-          horizontal centering of the table card regardless of intrinsic sizing. */}
-      <div className="w-full flex justify-center">
+      {/* Table area — flex-1 owns remaining width; table centered inside it */}
+      <div className="flex-1 min-w-0 flex justify-center">
       <div className="rounded-xl overflow-hidden shadow-sm ring-1 ring-stone-200 bg-white">
         <table className="border-collapse select-none text-[11px]">
           <thead>
@@ -107,7 +111,7 @@ export function MatrixGridMobile({
                 <th
                   key={item.id}
                   className="align-bottom pb-2 font-normal cursor-default select-none"
-                  style={{ width: CELL, height: 56 }}
+                  style={{ width: CELL_W, height: 56 }}
                   onClick={() => onClickTerm?.(item.name)}
                 >
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -140,7 +144,7 @@ export function MatrixGridMobile({
                 >
                   <td
                     className="text-right pr-2 text-stone-600 font-medium whitespace-nowrap border-r-2 border-stone-200 cursor-default select-none text-[11px]"
-                    style={{ height: CELL }}
+                    style={{ height: CELL_H }}
                     onClick={() => onClickTerm?.(primary.name)}
                   >
                     {primary.name}
@@ -160,7 +164,8 @@ export function MatrixGridMobile({
                           isManual={isManual}
                           isAuto={isAuto}
                           disabled={disabled || isAuto}
-                          size={CELL}
+                          size={CELL_W}
+                          height={CELL_H}
                           isHinted={isHinted}
                           onClick={() => onCellClick(0, di, catIdx, ii)}
                         />
@@ -172,6 +177,7 @@ export function MatrixGridMobile({
             })}
           </tbody>
         </table>
+      </div>
       </div>
     </div>
   );
