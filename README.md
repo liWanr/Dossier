@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔎 侦探事务所 · Detective Bureau
+# 🔎 侦探事务所 · Dossier
 
 **每天一道逻辑推理谜题，化身侦探还原案件全貌。**
 
