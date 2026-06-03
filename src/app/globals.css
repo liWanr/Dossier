@@ -5,6 +5,11 @@
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
+/* Dark mode — triggered by `data-theme="dark"` on <html>. The theme attribute
+   is written by the client (settingsStore.applyTheme) based on the user's
+   choice (auto / light / dark). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -15,6 +20,8 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #a8a29e; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #78716c; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #57534e; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #78716c; }
 
 /* Matrix cell transitions */
 button { transition-property: background-color, border-color, color; transition-duration: 100ms; }
