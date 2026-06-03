@@ -9,7 +9,7 @@ const notoSansSC = Noto_Sans_SC({
 });
 
 export const metadata: Metadata = {
-  title: "每日推理挑战",
+  title: "侦探事务所",
   description: "每天解开三道逻辑推理谜题，还原案件真相。",
   manifest: "/manifest.json",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "侦探事务所" },

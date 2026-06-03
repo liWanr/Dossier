@@ -41,7 +41,7 @@ export function AppHeader({ activePage, onShowTutorial, onShowSettings, isHistor
         </div>
         <div className="hidden sm:block">
           <div className="text-stone-900 dark:text-white font-bold text-sm leading-tight tracking-wide">侦探事务所</div>
-          <div className="text-stone-500 dark:text-stone-400 text-[10px] leading-tight">每日推理挑战</div>
+          <div className="text-stone-500 dark:text-stone-400 text-[10px] leading-tight">侦探事务所</div>
         </div>
       </div>
 

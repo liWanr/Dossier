@@ -21,7 +21,7 @@ export function GameHeader({ date, isComplete }: GameHeaderProps) {
         </div>
         <div>
           <div className="text-white font-bold text-sm leading-tight tracking-wide">侦探事务所</div>
-          <div className="text-stone-400 text-[10px] leading-tight">每日推理挑战</div>
+          <div className="text-stone-400 text-[10px] leading-tight">侦探事务所</div>
         </div>
       </div>
 
