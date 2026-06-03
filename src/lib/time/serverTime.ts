@@ -64,3 +64,52 @@ export function safeTz(tz: string | null): string {
     return 'UTC';
   }
 }
+
+// ---- Date gating ------------------------------------------------------------
+//
+// The "today" that decides which puzzles are unlocked is computed SERVER-SIDE
+// against a fixed timezone — never trusting the client's tz parameter.
+// A safety window lets users in earlier timezones (e.g. UTC-10 Hawaii) play the
+// new puzzle a few hours before midnight Asia/Shanghai.
+
+export const BASE_TZ = 'Asia/Shanghai';
+const SAFETY_WINDOW_HOURS = 6;
+
+// Hard cap on how many days past "today" any puzzle can ever be served by the
+// API. Set via env var `PUZZLE_MAX_DAYS_AHEAD` (default 1). This is defense in
+// depth on top of `latestPlayableDate`: even if BASE_TZ + safety-window math
+// drifts or is bypassed, the API still refuses dates beyond this many days
+// from server "today" in BASE_TZ.
+const MAX_DAYS_AHEAD = (() => {
+  const raw = parseInt(process.env.PUZZLE_MAX_DAYS_AHEAD ?? '1', 10);
+  return Number.isFinite(raw) && raw >= 0 ? raw : 1;
+})();
+
+function addDaysInBaseTz(dateStr: string, days: number): string {
+  // dateStr is YYYY-MM-DD in BASE_TZ. Convert via local midnight + offset.
+  // Safe approximation: parse YYYY-MM-DD as a UTC date, add `days * 86400_000`,
+  // then format back. BASE_TZ shifts are constant 8h so day boundaries align.
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getUTCDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
+/**
+ * Latest date (YYYY-MM-DD in BASE_TZ) the player is allowed to access right now.
+ * = min( today-in-base + safety-window-hours, today-in-base + MAX_DAYS_AHEAD )
+ */
+export function latestPlayableDate(utcMs: number): string {
+  const safety = todayInTimezone(utcMs + SAFETY_WINDOW_HOURS * 3600_000, BASE_TZ);
+  const today  = todayInTimezone(utcMs, BASE_TZ);
+  const hardCap = addDaysInBaseTz(today, MAX_DAYS_AHEAD);
+  return safety < hardCap ? safety : hardCap;
+}
+
+/** Date the server considers "today" right now (no safety window). */
+export function serverToday(utcMs: number): string {
+  return todayInTimezone(utcMs, BASE_TZ);
+}
