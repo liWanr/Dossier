@@ -22,12 +22,12 @@ export function ClueList({ puzzle, clueStatuses, activeTerm, allTerms, onHoverTe
   return (
     <div className="flex flex-col h-full">
       {/* Panel header */}
-      <div className="flex items-center justify-between px-4 h-10 border-b border-stone-200">
-        <h2 className="text-sm font-bold text-stone-800 tracking-wide">线 索</h2>
-        <div className="flex items-center gap-3 text-xs text-stone-500">
+      <div className="flex items-center justify-between px-4 h-10 border-b border-stone-200 dark:border-stone-700">
+        <h2 className="text-sm font-bold text-stone-800 dark:text-stone-100 tracking-wide">线 索</h2>
+        <div className="flex items-center gap-3 text-xs text-stone-500 dark:text-stone-400">
           <span>
-            <span className="font-bold text-emerald-600">{satisfied}</span>
-            <span className="text-stone-400">/{total}</span>
+            <span className="font-bold text-emerald-600 dark:text-emerald-400">{satisfied}</span>
+            <span className="text-stone-400 dark:text-stone-500">/{total}</span>
           </span>
           {violated > 0 && (
             <span className="font-bold text-red-500">{violated} 矛盾</span>
@@ -36,7 +36,7 @@ export function ClueList({ puzzle, clueStatuses, activeTerm, allTerms, onHoverTe
       </div>
 
       {/* Progress bar — full width, outside scroll area */}
-      <div className="h-1 bg-stone-100">
+      <div className="h-1 bg-stone-100 dark:bg-stone-800">
         <div
           className="h-full bg-emerald-400 transition-all duration-300"
           style={{ width: `${(satisfied / total) * 100}%` }}
